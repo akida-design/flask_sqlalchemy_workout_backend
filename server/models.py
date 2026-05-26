@@ -16,7 +16,7 @@ class Exercise(db.Model):
     # Relationship: Exercise has many WorkoutExercises
     workout_exercises = db.relationship(
         'WorkoutExercise',
-        backref='exercise',
+        back_populates='exercise',
         cascade='all, delete-orphan',
         foreign_keys='WorkoutExercise.exercise_id'
     )
@@ -25,7 +25,9 @@ class Exercise(db.Model):
     workouts = db.relationship(
         'Workout',
         secondary='workout_exercises',
-        backref='exercises'
+        back_populates='exercises',
+        overlaps='workout_exercises',
+        viewonly=True
     )
     
     @validates('name')
@@ -66,9 +68,18 @@ class Workout(db.Model):
     # Relationship: Workout has many WorkoutExercises
     workout_exercises = db.relationship(
         'WorkoutExercise',
-        backref='workout',
+        back_populates='workout',
         cascade='all, delete-orphan',
         foreign_keys='WorkoutExercise.workout_id'
+    )
+    
+    # Relationship: Workout has many Exercises through WorkoutExercises
+    exercises = db.relationship(
+        'Exercise',
+        secondary='workout_exercises',
+        back_populates='workouts',
+        overlaps='workout_exercises',
+        viewonly=True
     )
     
     @validates('date')
@@ -109,6 +120,10 @@ class WorkoutExercise(db.Model):
     reps = db.Column(db.Integer)
     sets = db.Column(db.Integer)
     duration_seconds = db.Column(db.Integer)
+    
+    # Relationships using back_populates for clarity
+    workout = db.relationship('Workout', back_populates='workout_exercises', overlaps='exercises,workouts')
+    exercise = db.relationship('Exercise', back_populates='workout_exercises', overlaps='workouts,exercises')
     
     @validates('reps')
     def validate_reps(self, key, value):
